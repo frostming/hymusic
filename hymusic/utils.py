@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 
 
 class lazy_property(object):
@@ -19,3 +20,11 @@ class lazy_property(object):
         if obj is None:
             return
         obj.__dict__[self.name] = val
+
+
+def build_date(timeval):
+    """Convert a milisecond epic time to human readable format"""
+    if not timeval:
+        return None
+    dtime = datetime.datetime.fromtimestamp(timeval / 1000)
+    return dtime.strftime('%Y-%m-%d')
