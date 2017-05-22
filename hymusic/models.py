@@ -22,33 +22,57 @@ class Model(object):
 
     def parse(self):
         """Parse info from main API"""
-        meth = getattr(source, '_%s' % self.__class__.__name__.lower())
-        meth(self.id, self)
+        meth = getattr(self.source, 'get_%s' % self.__class__.__name__.lower())
+        id = self.source.get_identifier(self)
+        meth(id, self)
 
 
 class Album(Model):
 
     def __repr__(self):
-        return '<Album(%d): %s - %s>' % (self.id, self.name, self.artist.name)
+        return '<Album(%d): %s - %s>' % (self.get_identifier(self), self.name, self.artist.name)
+
+    songs = lazy_property(Model.parse, 'songs')
+    # company = lazy_property(Model, 'company')
+    cover_url = lazy_property(Model, 'cover_url')
+    # publish_time = lazy_property(Model, 'publish_time')
 
 
 class Artist(Model):
 
     def __repr__(self):
-        return '<Artist(%d): %s>' % (self.id, self.name)
+        return '<Artist(%d): %s>' % (self.get_identifier(self), self.name)
+
+    hot_albums = lazy_property(Model.parse, 'hot_albums')
+    cover_url = lazy_property(Model, 'cover_url')
 
 
-class Music(Model):
+class Song(Model):
 
     def __repr__(self):
-        return '<Music(%d): %s - %s>' % (self.id, self.name, self.artist.name)
+        return '<Song(%d): %s - %s>' % (self.get_identifier(self),
+                                        self.name, self.artist.name)
+
+    def download(self, filepath, quality='high'):
+        url = self.source.get_song_url(self.id, quality)
+        with open(filepath, 'wb') as f:
+            f.write(self.source.session.get(url).content)
+        print "Download song successfully to %s" % filepath
+
+    def get_lyric(self, type='lyric'):
+        return self.source.get_song_lyric(self.id, type)
 
 
 class PlayList(Model):
 
     def __repr__(self):
-        return '<Playlist(%d): %s>' % (self.id, self.title)
+        return '<Playlist(%d): %s>' % (self.id, self.name)
+
+    shared_count = lazy_property(Model.parse, 'shared_count')
+    songs = lazy_property(Model.parse, 'songs')
 
 
-class User:
-    pass
+class User(Model):
+
+    def __repr__(self):
+        return '<User(%d): %s' % (self.id, self.name)

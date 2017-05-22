@@ -9,3 +9,8 @@ if IS_PY3:
 else:
     from urlparse import urlparse
     string_types = (str, unicode)
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
