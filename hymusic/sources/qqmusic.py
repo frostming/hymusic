@@ -9,7 +9,6 @@ from hymusic.models import Album, Artist, Song, PlayList, User
 class QQMusic(BaseSource):
     """https://y.qq.com"""
     API_ROOT = 'https://c.y.qq.com'
-    REFERER = 'https://y.qq.com/portal/search.html'
     SEARCH_URL = API_ROOT + '/soso/fcgi-bin/search_cp'
     SEARCH_PLAYLIST_URL = (API_ROOT + '/soso/fcgi-bin/'
                            'client_music_search_songlist')
@@ -20,6 +19,7 @@ class QQMusic(BaseSource):
     PLAYLIST_URL = API_ROOT + '/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
     ARTIST_URL = API_ROOT + '/v8/fcg-bin/fcg_v8_singer_album.fcg'
     CATEGORY_URL = API_ROOT + '/splcloud/fcgi-bin/fcg_get_diss_tag_conf.fcg'
+    COMMENT_URL = API_ROOT + '/rsc/fcgi-bin/fcg_get_bullet_info.fcg'
 
     def get_identifier(self, object):
         if isinstance(object, PlayList):
@@ -28,13 +28,12 @@ class QQMusic(BaseSource):
 
     def set_session(self):
         self.session.headers = {'Host': 'c.y.qq.com',
-                                'Referer': self.REFERER}
+                                'Referer': 'https://y.qq.com/'}
 
-    def get_playlists(self, maxresults=None, cat=None, order=None):
+    def get_playlists(self, maxpage=None, cat=None, order=None):
         """Get playlists
 
-        :param maxresults: the max return number, if given None, returns
-                            all items.
+        :param maxpage: the max page number to return
         :param cat: the playlist category
         :param order: hot/new
         :returns: a generator
@@ -47,14 +46,11 @@ class QQMusic(BaseSource):
                    'sortId': order_id, 'categoryId': cat_id,
                    'sin': 0, 'ein': 29}
         i = 0
-        while maxresults is None or i < maxresults:
+        while maxpage is None or i < maxpage:
             r = self.session.get(self.PLAYLIST_HUB_URL, params=payload)
             data = r.json()['data']['list']
-            for item in data:
-                yield self._build_playlist_from_json(item)
-                i += 1
-                if maxresults and i >= maxresults:
-                    return
+            yield [self._build_playlist_from_json(item) for item in data]
+            i += 1
             payload['rnd'] = random.random()
             payload['sin'] += 30
             payload['ein'] += 30
@@ -212,9 +208,11 @@ class QQMusic(BaseSource):
     def _build_artist_from_json(self, json, **kwargs):
         if isinstance(json, list):
             json = json[0]
-        mid=alternative_get(json, 'mid', 'singermid', 'singerMID', 'singer_mid')
+        mid = alternative_get(json, 'mid', 'singermid',
+                              'singerMID', 'singer_mid')
         fields = dict(
-            id=alternative_get(json, 'id', 'singerid', 'singerID', 'singer_id'),
+            id=alternative_get(json, 'id', 'singerid',
+                               'singerID', 'singer_id'),
             mid=mid,
             name=alternative_get(json, 'name', 'singername',
                                  'singerName', 'singer_name'),
@@ -265,3 +263,10 @@ class QQMusic(BaseSource):
                 if catname == item['categoryName']:
                     return item['categoryId']
         raise RuntimeError('Cannot find category "%s"' % catname)
+
+    def get_comment_count(self, song_id):
+        payload = {'songmid': song_id, 'platform': 'h5', 'format': 'json',
+                   'pagesize': 10, 'sin': -1, 'reqtype': 1,
+                   'inCharset': 'utf-8', 'outCharset': 'utf-8'}
+        r = self.session.get(self.COMMENT_URL, params=payload)
+        return r.json()['total']

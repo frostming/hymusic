@@ -34,11 +34,10 @@ class NeteaseCloud(BaseSource):
     def set_session(self):
         self.session.headers = {'referer': self.WEB_ROOT}
 
-    def get_playlists(self, maxresults=None, cat=None, order=None):
+    def get_playlists(self, maxpage=None, cat=None, order=None):
         """Get playlists
 
-        :param maxresults: the max return number, if given None, returns
-                            all items.
+        :param maxpage: the max page number to return
         :param cat: the playlist category
         :param order: hot/new
         :returns: a generator
@@ -46,10 +45,11 @@ class NeteaseCloud(BaseSource):
         i = 0
         payload = {'cat': cat, 'order': order,
                    'limit': 35, 'offset': 0}
-        while maxresults is None or i < maxresults:
+        while maxpage is None or i < maxpage:
             r = self.session.get(self.PLAYLIST_HUB_URL, params=payload)
             soup = BeautifulSoup(r.text, 'lxml')
             results = soup.select('#m-pl-container > li')
+            rv = []
             for pl in results:
                 cover_url = pl.div.img['src'].split('?')[0]
                 title = pl.div.a['title']
@@ -57,14 +57,13 @@ class NeteaseCloud(BaseSource):
                 creator = pl.find('a', class_='nm')
                 creator_id = int(creator['href'].split('id=')[1])
                 creator_name = creator.string
-                yield PlayList(self, id=int(id), title=title,
-                               cover_url=cover_url,
-                               creator=User(self, name=creator_name,
-                                            id=creator_id))
-                i += 1
-                if maxresults and i >= maxresults:
-                    return
+                rv.append(PlayList(self, id=int(id), name=title,
+                                   cover_url=cover_url,
+                                   creator=User(self, name=creator_name,
+                                                id=creator_id)))
+            yield rv
             payload['offset'] += 35
+            i += 1
 
     def search(self, target, type='song', maxresults=None, **kwargs):
         """Search song by target string.

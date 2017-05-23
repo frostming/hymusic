@@ -60,6 +60,10 @@ class Song(Model):
     def get_lyric(self, type='lyric'):
         return self.source.get_song_lyric(self.id, type)
 
+    @lazy_property
+    def comment_count(self):
+        self.comment_count = self.source.get_comment_count(self.mid)
+
 
 class PlayList(Model):
 
@@ -67,6 +71,8 @@ class PlayList(Model):
         return '<Playlist(%d): %s>' % (self.id, self.name)
 
     songs = lazy_property(Model.parse, 'songs')
+    song_count = lazy_property(Model.parse, 'song_count')
+    play_count = lazy_property(Model.parse, 'play_count')
 
 
 class User(Model):
