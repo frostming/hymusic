@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import re
 import datetime
 import hashlib
 import base64
+from ._compat import json
 
 
 class lazy_property(object):
@@ -53,3 +55,7 @@ def alternative_get(obj, *keys):
     for key in keys:
         if key in obj:
             return obj.get(key)
+
+
+def strip_json(text):
+    return json.loads(re.findall(r'.*?(\{.*\}).*', text)[0])

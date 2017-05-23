@@ -30,18 +30,16 @@ class Model(object):
 class Album(Model):
 
     def __repr__(self):
-        return '<Album(%d): %s - %s>' % (self.get_identifier(self), self.name, self.artist.name)
+        return '<Album(%d): %s - %s>' % (self.id, self.name, self.artist.name)
 
     songs = lazy_property(Model.parse, 'songs')
-    # company = lazy_property(Model, 'company')
     cover_url = lazy_property(Model, 'cover_url')
-    # publish_time = lazy_property(Model, 'publish_time')
 
 
 class Artist(Model):
 
     def __repr__(self):
-        return '<Artist(%d): %s>' % (self.get_identifier(self), self.name)
+        return '<Artist(%d): %s>' % (self.id, self.name)
 
     hot_albums = lazy_property(Model.parse, 'hot_albums')
     cover_url = lazy_property(Model, 'cover_url')
@@ -50,7 +48,7 @@ class Artist(Model):
 class Song(Model):
 
     def __repr__(self):
-        return '<Song(%d): %s - %s>' % (self.get_identifier(self),
+        return '<Song(%d): %s - %s>' % (self.id,
                                         self.name, self.artist.name)
 
     def download(self, filepath, quality='high'):
@@ -68,7 +66,6 @@ class PlayList(Model):
     def __repr__(self):
         return '<Playlist(%d): %s>' % (self.id, self.name)
 
-    shared_count = lazy_property(Model.parse, 'shared_count')
     songs = lazy_property(Model.parse, 'songs')
 
 

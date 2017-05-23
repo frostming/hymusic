@@ -62,7 +62,7 @@ class NeteaseCloud(BaseSource):
                                creator=User(self, name=creator_name,
                                             id=creator_id))
                 i += 1
-                if i >= maxresults:
+                if maxresults and i >= maxresults:
                     return
             payload['offset'] += 35
 
